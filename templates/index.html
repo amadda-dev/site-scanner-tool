@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Website Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen py-10">
+
+<div class="max-w-3xl mx-auto px-4">
+
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-2">🌐 Website Scanner</h1>
+        <p class="text-gray-500">Analyze security, speed, and SEO in one click.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+        <form method="POST" class="flex gap-2">
+            <input type="text" name="url_input"
+                   class="flex-1 block w-full rounded-lg border-gray-300 border p-4 text-lg focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="example.com" required>
+            <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition" type="submit">
+                Analyze
+            </button>
+        </form>
+        {% if error %}
+            <div class="mt-4 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                ⚠️ Error: {{ error }}
+            </div>
+        {% endif %}
+    </div>
+
+    {% if data %}
+        <div class="mb-8">
+            <div class="bg-white p-8 rounded-xl shadow-md flex flex-col justify-center items-center">
+                <span class="text-gray-500 uppercase text-xs font-bold tracking-wider">Server Load Speed</span>
+                <div class="text-5xl font-bold text-gray-800 mt-4 mb-2">{{ data.response_time }} ms</div>
+
+                <div class="mt-2 px-4 py-2 rounded-full text-lg font-medium
+                    {% if data.response_time < 500 %} bg-green-100 text-green-800
+                    {% elif data.response_time < 1000 %} bg-yellow-100 text-yellow-800
+                    {% else %} bg-red-100 text-red-800 {% endif %}">
+
+                    {% if data.response_time < 200 %}
+                        🚀 Faster than 95% of websites
+                    {% elif data.response_time < 500 %}
+                        ⚡ Faster than most websites
+                    {% elif data.response_time < 1000 %}
+                        🐢 About average speed
+                    {% else %}
+                        🐌 Slower than most websites
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-900">Security & SEO Checklist</h3>
+            </div>
+
+            <div class="divide-y divide-gray-100">
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">🔒</span>
+                        <span class="text-gray-700 font-medium">HTTPS Encryption</span>
+                    </div>
+                    {% if data.https %}
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">✓ PASS</span>
+                    {% else %}
+                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">FAIL</span>
+                    {% endif %}
+                </div>
+
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">🛡️</span>
+                        <span class="text-gray-700 font-medium">HSTS Header</span>
+                    </div>
+                    {% if data.hsts %}
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">✓ PASS</span>
+                    {% else %}
+                        <span class="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-sm font-bold">MISSING</span>
+                    {% endif %}
+                </div>
+
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">🖱️</span>
+                        <span class="text-gray-700 font-medium">Clickjacking Protection</span>
+                    </div>
+                    {% if data.clickjacking %}
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">✓ PASS</span>
+                    {% else %}
+                        <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-bold">RISK</span>
+                    {% endif %}
+                </div>
+
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">🔍</span>
+                        <span class="text-gray-700 font-medium">SEO Meta Description</span>
+                    </div>
+                    {% if data.has_meta_desc %}
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">✓ PASS</span>
+                    {% else %}
+                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">MISSING</span>
+                    {% endif %}
+                </div>
+
+                {% if data.broken_links %}
+                <div class="p-4 bg-red-50 border-t border-red-100">
+                    <h4 class="text-red-800 font-bold mb-2">❌ Broken Images Found:</h4>
+                    <ul class="list-disc pl-5 text-red-700 text-sm">
+                        {% for link in data.broken_links %}
+                            <li class="break-all">{{ link }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <div class="mt-8 bg-blue-50 rounded-xl p-6 border border-blue-100">
+            <h3 class="text-xl font-bold text-blue-900 mb-4">💡 How to Improve Your Score</h3>
+
+            <div class="grid grid-cols-1 gap-6">
+                <div class="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                    <h4 class="font-bold text-blue-800 flex items-center gap-2">
+                        <span>🔒</span> What is HTTPS?
+                    </h4>
+                    <p class="text-sm text-gray-700 mt-2">
+                        HTTPS encrypts the data sent between your website and your visitors. Without it, hackers on the same network (like public Wi-Fi) can steal passwords, credit cards, and session cookies.
+                    </p>
+                    <div class="mt-3 p-3 bg-gray-100 rounded text-sm font-mono text-gray-800 border-l-4 border-blue-500">
+                        <strong>Fix:</strong> Obtain a free SSL certificate from <a href="https://letsencrypt.org" class="underline text-blue-600">Let's Encrypt</a> or your hosting provider.
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                    <h4 class="font-bold text-blue-800 flex items-center gap-2">
+                        <span>🛡️</span> What is HSTS?
+                    </h4>
+                    <p class="text-sm text-gray-700 mt-2">
+                        Even with HTTPS, a user might accidentally type <code>http://</code>. HSTS (HTTP Strict Transport Security) forces the browser to <em>always</em> use the secure HTTPS version, preventing "downgrade attacks."
+                    </p>
+                    <div class="mt-3 p-3 bg-gray-100 rounded text-sm font-mono text-gray-800 border-l-4 border-blue-500">
+                        <strong>Fix:</strong> Add this header to your web server:<br>
+                        <code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                    <h4 class="font-bold text-blue-800 flex items-center gap-2">
+                        <span>🖱️</span> What is Clickjacking?
+                    </h4>
+                    <p class="text-sm text-gray-700 mt-2">
+                        Clickjacking is a sneaky attack where hackers hide your website inside an invisible frame (iframe) on their own malicious site.
+                        Users might think they are clicking a button on the hacker's page, but they are actually clicking a hidden button on <em>your</em> site.
+                    </p>
+                    <div class="mt-3 p-3 bg-gray-100 rounded text-sm font-mono text-gray-800 border-l-4 border-blue-500">
+                        <strong>Fix:</strong> Add this header to your web server:<br>
+                        <code>X-Frame-Options: SAMEORIGIN</code>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                    <h4 class="font-bold text-blue-800 flex items-center gap-2">
+                        <span>🔍</span> What is a Meta Description?
+                    </h4>
+                    <p class="text-sm text-gray-700 mt-2">
+                        This is the short text snippet that appears under your link in Google search results. While it doesn't directly affect ranking, a good description increases the likelihood of users clicking your link.
+                    </p>
+                    <div class="mt-3 p-3 bg-gray-100 rounded text-sm font-mono text-gray-800 border-l-4 border-blue-500">
+                        <strong>Fix:</strong> Add this tag inside your HTML <code>&lt;head&gt;</code>:<br>
+                        <code>&lt;meta name="description" content="A brief summary of your site..."&gt;</code>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                    <h4 class="font-bold text-blue-800 flex items-center gap-2">
+                        <span>⚡</span> Boost Speed
+                    </h4>
+                    <p class="text-sm text-blue-700 mt-1">Compress large images, use a CDN (like Cloudflare), and minify your CSS/JS files.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+</body>
+</html>
