@@ -1,8 +1,30 @@
 from flask import Flask, render_template, request
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 app = Flask(__name__)
+
+
+def validate_url(user_input):
+    url = user_input.strip()
+
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+
+    parsed = urlparse(url)
+
+    if parsed.scheme not in ['http', 'https']:
+        return None, "Invalid URL scheme. Only HTTP and HTTPS are allowed."
+
+    if '.' not in parsed.netloc:
+        return None, "Invalid domain name."
+
+    forbidden_hosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1']
+    if parsed.netloc.split(':')[0] in forbidden_hosts:
+        return None, "Scanning local resources is not allowed."
+
+    return url, None
 
 
 def scan_website(url):
@@ -20,9 +42,6 @@ def scan_website(url):
         "has_meta_desc": False,
         "broken_links": []
     }
-
-    if not url.startswith(('http://', 'https://')):
-        url = 'https://' + url
 
     try:
         response = requests.get(url, timeout=5)
@@ -60,7 +79,6 @@ def scan_website(url):
                 if cookie.secure:
                     secure_count += 1
             results["cookies_secure"] = f"{secure_count} of {len(response.cookies)} cookies are Secure"
-
             if secure_count == len(response.cookies):
                 results["cookies_score"] = 1
         else:
@@ -93,13 +111,12 @@ def scan_website(url):
         if results["has_meta_desc"]: score += 10
         if results["cookies_score"] == 1: score += 10
         if len(results["broken_links"]) == 0: score += 10
-
         results["score"] = score
 
         return results, None
 
     except Exception as e:
-        return None, str(e)
+        return None, f"Could not connect: {str(e)}"
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -109,7 +126,13 @@ def home():
 
     if request.method == 'POST':
         url_input = request.form.get('url_input')
-        data, error = scan_website(url_input)
+
+        valid_url, validation_error = validate_url(url_input)
+
+        if validation_error:
+            error = validation_error
+        else:
+            data, error = scan_website(valid_url)
 
     return render_template('index.html', data=data, error=error)
 
